@@ -28,7 +28,8 @@
     "raw-body": "^2.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "utilities@latest": "link:@shopify/app-bridge/utilities@latest"
+    "utilities@latest": "link:@shopify/app-bridge/utilities@latest",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/cookie": "^0.5.4",

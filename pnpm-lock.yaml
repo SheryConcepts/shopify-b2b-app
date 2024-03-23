@@ -56,6 +56,9 @@ importers:
       utilities@latest:
         specifier: link:@shopify/app-bridge/utilities@latest
         version: link:@shopify/app-bridge/utilities@latest
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
     devDependencies:
       '@types/cookie':
         specifier: ^0.5.4
