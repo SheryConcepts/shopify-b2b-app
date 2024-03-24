@@ -1,4 +1,4 @@
-import { Box, Card, InlineStack, Text } from "@shopify/polaris";
+import { Box, Button, Card, InlineStack, Text } from "@shopify/polaris";
 import Link from "next/link";
 import { ArrowRightIcon } from "@shopify/polaris-icons";
 
@@ -23,7 +23,8 @@ export default function HomePageCard({
       </Box>
       <InlineStack align="end">
         <Link href={href}>
-          <ArrowRightIcon width={25} />
+          <Button icon={<ArrowRightIcon width={25} />}>
+          </Button>
         </Link>
       </InlineStack>
     </Card>

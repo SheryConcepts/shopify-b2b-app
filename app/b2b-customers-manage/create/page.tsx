@@ -10,22 +10,21 @@ import {
   Box,
 } from "@shopify/polaris";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import * as z from "zod";
+
+const customerSchema = z.object({
+  firstName: z.string().trim().min(1, "First Name is required").nonempty(),
+  lastName: z.string().trim().min(1, "Last Name is required").nonempty(),
+  email: z.string().email("Invalid email").nonempty(),
+  password: z.string().trim().min(1, "Password is required").nonempty(),
+  phone: z.string().optional(),
+  address: z.string().trim().optional(),
+  note: z.string().optional(),
+});
 
 export default function CreatePage() {
   const router = useRouter();
-
-  const customerSchema = z.object({
-    firstName: z.string().trim().min(1, "First Name is required").nonempty(),
-    sdf: z.string().trim().min(1, "First Name is required").nonempty(),
-    lastName: z.string().trim().min(1, "Last Name is required").nonempty(),
-    email: z.string().email("Invalid email").nonempty(),
-    password: z.string().trim().min(1, "Password is required").nonempty(),
-    phone: z.string().optional(),
-    address: z.string().trim().optional(),
-    note: z.string().optional(),
-  });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -46,6 +45,7 @@ export default function CreatePage() {
     address: "",
     note: "",
   }); // State for specific field errors
+  
 
   const handleChange = (value: string, id: string) => {
     setFormData((prevData) => ({ ...prevData, [id]: value }));
@@ -55,12 +55,11 @@ export default function CreatePage() {
       email: "",
       password: "",
       phone: "",
-      address: "",
-      note: "",
+      address: "", note: "",
     });
   };
 
-  const handleSubmit = async (event: any) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       const validatedData = customerSchema.safeParse(formData);
@@ -138,6 +137,7 @@ export default function CreatePage() {
                 error={validationErrors.email}
               />
               <TextField
+                placeholder="Customers will use this password to Login."
                 id="password"
                 autoComplete=""
                 label="Password"

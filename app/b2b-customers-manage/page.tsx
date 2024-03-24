@@ -1,6 +1,6 @@
 "use client";
 
-import { Page } from "@shopify/polaris";
+import { Page, SkeletonBodyText, SkeletonPage } from "@shopify/polaris";
 import { useRouter } from "next/navigation";
 
 export default function B2BCustomersManage() {
@@ -18,6 +18,7 @@ export default function B2BCustomersManage() {
         content: "Go to home screen",
       }}
       title="B2B Customers"
-    ></Page>
+    >
+    </Page>
   );
 }

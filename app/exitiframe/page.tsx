@@ -13,7 +13,6 @@ export default function ExitIframe() {
     }
   }, [searchParams]);
 
-  shopify.loading(true);
 
   return <div></div>;
 }

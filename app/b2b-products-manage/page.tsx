@@ -2,6 +2,7 @@
 
 import { Page } from "@shopify/polaris";
 import { useRouter } from "next/navigation";
+import Home from "../main-page";
 
 export default function B2BProductsManage() {
   const router = useRouter();
