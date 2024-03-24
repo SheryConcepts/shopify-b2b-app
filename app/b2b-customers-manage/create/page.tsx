@@ -1,5 +1,6 @@
 "use client";
 
+import { gql, useLazyQuery, useMutation } from "@apollo/client";
 import {
   Form,
   FormLayout,
@@ -8,6 +9,7 @@ import {
   Card,
   Button,
   Box,
+  Spinner,
 } from "@shopify/polaris";
 import { useRouter } from "next/navigation";
 import React, { useState, useTransition } from "react";
@@ -23,8 +25,26 @@ const customerSchema = z.object({
   note: z.string().optional(),
 });
 
+const CUSTOMER_CREATE_MUTATION = gql`
+  mutation CreateCustomer($input: CustomerInput!) {
+    customerCreate(input: $input) {
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 export default function CreatePage() {
   const router = useRouter();
+  const [createCustomer, { called, loading }] = useMutation(
+    CUSTOMER_CREATE_MUTATION,
+    {
+      fetchPolicy: "network-only",
+    },
+  );
+  const pending = called && loading;
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -45,7 +65,6 @@ export default function CreatePage() {
     address: "",
     note: "",
   }); // State for specific field errors
-  
 
   const handleChange = (value: string, id: string) => {
     setFormData((prevData) => ({ ...prevData, [id]: value }));
@@ -55,7 +74,8 @@ export default function CreatePage() {
       email: "",
       password: "",
       phone: "",
-      address: "", note: "",
+      address: "",
+      note: "",
     });
   };
 
@@ -91,8 +111,64 @@ export default function CreatePage() {
         return;
       }
 
-      console.log("Validated form data:", validatedData.data);
       // Handle form submission logic here (e.g., send data to server)
+      const ops = async () => {
+        const { data } = await createCustomer({
+          variables: {
+            input: {
+              email: formData.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              metafields: [
+                {
+                  namespace: "b2b-app-customers",
+                  key: "password",
+                  value: formData.password,
+                  type: "single_line_text_field",
+                },
+              ],
+              phone: formData.phone,
+              note: formData.note,
+              tags: ["b2b"],
+              addresses: {
+                address1: formData.address,
+              },
+            },
+          },
+        });
+        const userErrors: any[] = data.customerCreate.userErrors ?? undefined;
+        if (userErrors.length !== 0) {
+          console.log(userErrors, "userErrors");
+          const validationErrorsData = userErrors.reduce(
+            (acc, error) => {
+              if (error.field[0] === "addresses") {
+                acc["address"] = error.message;
+              } else {
+                acc[error.field[0]] = error.message;
+              }
+              return acc;
+            },
+            {
+              firstName: "",
+              lastName: "",
+              email: "",
+              password: "",
+              phone: "",
+              address: "",
+              note: "",
+            },
+          );
+          setValidationErrors(validationErrorsData);
+          return { error: true };
+        }
+        return { error: false };
+      };
+      const { error } = await ops();
+      console.log(error, "error");
+      if (!error) {
+        shopify.toast.show("Customer Created");
+        router.push("/b2b-customers-manage");
+      }
     } catch (error) {
       console.error("Error during validation:", error);
     }
@@ -173,7 +249,12 @@ export default function CreatePage() {
                 value={formData.note}
                 onChange={handleChange}
               />
-              <Button submit>Create Customer</Button>
+              <Button
+                icon={pending ? <Spinner size="small" /> : undefined}
+                submit
+              >
+                {pending ? "" : "Create Customer"}
+              </Button>
             </FormLayout>
           </Form>
         </Card>
