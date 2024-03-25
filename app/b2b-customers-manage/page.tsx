@@ -1,9 +1,16 @@
 "use client";
 
 import { gql, useLazyQuery } from "@apollo/client";
-import { BlockStack, Box, Card, DescriptionList, Page } from "@shopify/polaris";
+import {
+  BlockStack,
+  Box,
+  Card,
+  DescriptionList,
+  Page,
+  SkeletonBodyText,
+} from "@shopify/polaris";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const READ_CUSTOMERS_QUERY = gql`
   query {
@@ -92,11 +99,15 @@ export default function B2BCustomersManage() {
       title="B2B Customers"
     >
       <Box paddingBlockEnd={"300"}>
-        <BlockStack gap={"300"}>
-          {customersInfo.map((i) => (
-            <CustomerInfoCard key={i.email} customerInfo={i} />
-          ))}
-        </BlockStack>
+        {customersInfo.length > 0 ? (
+          <BlockStack gap={"300"}>
+            {customersInfo.map((i) => (
+              <CustomerInfoCard key={i.email} customerInfo={i} />
+            ))}
+          </BlockStack>
+        ) : (
+          <SkeletonBodyText lines={5} />
+        )}
       </Box>
     </Page>
   );
