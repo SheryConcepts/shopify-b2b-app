@@ -9,7 +9,7 @@ export default function B2BProductsManage() {
   return (
     <Page
       primaryAction={{
-        onAction: () => console.log("page action triggered"),
+        onAction: () => router.push("/b2b-products-manage/create"),
         content: "Create Product",
         id: "create-product-action",
       }}

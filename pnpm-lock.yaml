@@ -29,6 +29,9 @@ importers:
       '@shopify/shopify-api':
         specifier: ^9.5.0
         version: 9.5.0
+      '@types/uuid':
+        specifier: ^9.0.8
+        version: 9.0.8
       axios:
         specifier: ^1.6.7
         version: 1.6.7
@@ -56,6 +59,9 @@ importers:
       utilities@latest:
         specifier: link:@shopify/app-bridge/utilities@latest
         version: link:@shopify/app-bridge/utilities@latest
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -1416,6 +1422,10 @@ packages:
 
   /@types/tinycolor2@1.4.6:
     resolution: {integrity: sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==}
+    dev: false
+
+  /@types/uuid@9.0.8:
+    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
     dev: false
 
   /@types/webidl-conversions@7.0.3:
