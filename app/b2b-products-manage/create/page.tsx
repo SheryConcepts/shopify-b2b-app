@@ -1,5 +1,6 @@
 "use client";
 
+import { gql,  useMutation, useQuery } from "@apollo/client";
 import {
   Page,
   Card,
@@ -16,7 +17,7 @@ import {
 import { DeleteIcon } from "@shopify/polaris-icons";
 import { randomUUID } from "crypto";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { v4 as uuid } from "uuid";
 
 function showAndHideShopifyToast(message: string, duration: number) {
@@ -72,6 +73,8 @@ export default function CreatePage() {
     }
   }
 
+  async function handleSave() { }
+
   return (
     <Page
       backAction={{
@@ -104,9 +107,31 @@ export default function CreatePage() {
           </BlockStack>
         </Box>
       ) : null}
+      <Button onClick={handleSave}>Save</Button>
     </Page>
   );
 }
+
+const VariantMetafieldsUpdateMutation = gql`
+  mutation VariantMetafieldAdd($variantInput: ProductVariantInput!) {
+    productVariantUpdate(input: $variantInput) {
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const VariantMetafieldsReadQuery = gql`
+  query VariantMetafieldRead($id: ID!) {
+    productVariant(id: $id) {
+      metafield(namespace: "b2b-app", key: "batches") {
+        value
+      }
+    }
+  }
+`;
 
 function VariantCard({
   image,
@@ -124,6 +149,36 @@ function VariantCard({
   const [batches, setBatches] = useState<
     { id: string; quantity: string; price: string }[]
   >([]);
+
+  const [updateMetafield, { called, loading }] = useMutation(
+    VariantMetafieldsUpdateMutation,
+    {
+      fetchPolicy: "network-only",
+    },
+  );
+
+  const { error, data } = useQuery(VariantMetafieldsReadQuery, {
+    fetchPolicy: "network-only",
+    variables: { id },
+  });
+
+  useEffect(() => {
+    if (error) {
+      console.error(error, "VariantMetafieldsReadQueryError");
+      shopify.toast.show(
+        "Error while loading batches of the variant. Please try again.",
+      );
+      return;
+    }
+    try {
+      const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
+      setBatches(fetchedBatches);
+    } catch (e) {
+      console.error("Error while parsing the variant metafield");
+    }
+  }, [error, data.productVariant.metafield.value]);
+
+  const pending = called && loading;
 
   async function handleBatchSubmition() {
     if (!batchQuantity) {
@@ -143,6 +198,34 @@ function VariantCard({
       setBatchQuantityError("Already Exists");
       return;
     }
+
+    const { data, errors } = await updateMetafield({
+      variables: {
+        variantInput: {
+          id: id,
+          metafields: [
+            {
+              namespace: "b2b-app",
+              type: "json",
+              key: "batches",
+              value: JSON.stringify(
+                batches.map((i) => ({ quantity: i.quantity, price: i.price })),
+              ),
+            },
+          ],
+        },
+      },
+    });
+
+    if (errors) {
+      console.error(errors, "updateMetafieldErrors");
+      console.error(data, "updateMetafieldData");
+      shopify.toast.show("Error while updating batch.");
+      return;
+    }
+
+    console.log(data, "updateMetafieldData");
+
     setBatches([
       ...batches,
       { id: uuid(), quantity: batchQuantity, price: batchPrice },
@@ -212,7 +295,9 @@ function VariantCard({
                 type="number"
                 autoComplete=""
               />
-              <Button submit>Create Batch</Button>
+              <Button loading={pending} submit>
+                Create Batch
+              </Button>
             </BlockStack>
           </Form>
         </Layout.Section>

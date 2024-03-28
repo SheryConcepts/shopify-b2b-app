@@ -3,7 +3,7 @@
 client_id = "7e78054b0d3a86d0e3ca864ae83ff8d2"
 name = "b2b-app"
 handle = "b2b-app-15"
-application_url = "https://realtors-angel-bold-unto.trycloudflare.com"
+application_url = "https://explaining-scratch-mic-molecular.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_assigned_fulfillment_orders,read_cart_transforms,read_customer_ev
 
 [auth]
 redirect_urls = [
-  "https://realtors-angel-bold-unto.trycloudflare.com/auth/callback",
-  "https://realtors-angel-bold-unto.trycloudflare.com/auth/shopify/callback",
-  "https://realtors-angel-bold-unto.trycloudflare.com/api/auth/callback"
+  "https://explaining-scratch-mic-molecular.trycloudflare.com/auth/callback",
+  "https://explaining-scratch-mic-molecular.trycloudflare.com/auth/shopify/callback",
+  "https://explaining-scratch-mic-molecular.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
