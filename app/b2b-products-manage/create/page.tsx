@@ -1,6 +1,6 @@
 "use client";
 
-import { gql,  useMutation, useQuery } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 import {
   Page,
   Card,
@@ -15,17 +15,10 @@ import {
   InlineStack,
 } from "@shopify/polaris";
 import { DeleteIcon } from "@shopify/polaris-icons";
-import { randomUUID } from "crypto";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
-
-function showAndHideShopifyToast(message: string, duration: number) {
-  const id = shopify.toast.show(message);
-  setTimeout(() => {
-    shopify.toast.hide(id);
-  }, duration);
-}
+import { showAndHideShopifyToast } from "../../../helpers/showAndHideShopifyToast";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -73,7 +66,6 @@ export default function CreatePage() {
     }
   }
 
-  async function handleSave() { }
 
   return (
     <Page
@@ -107,7 +99,6 @@ export default function CreatePage() {
           </BlockStack>
         </Box>
       ) : null}
-      <Button onClick={handleSave}>Save</Button>
     </Page>
   );
 }
@@ -165,8 +156,9 @@ function VariantCard({
   useEffect(() => {
     if (error) {
       console.error(error, "VariantMetafieldsReadQueryError");
-      shopify.toast.show(
+      showAndHideShopifyToast(
         "Error while loading batches of the variant. Please try again.",
+        3000
       );
       return;
     }
@@ -220,7 +212,7 @@ function VariantCard({
     if (errors) {
       console.error(errors, "updateMetafieldErrors");
       console.error(data, "updateMetafieldData");
-      shopify.toast.show("Error while updating batch.");
+      showAndHideShopifyToast("Error while updating batch.", 3000);
       return;
     }
 
