@@ -167,7 +167,7 @@ export default function CreatePage() {
       console.log(error, "error");
       if (!error) {
         shopify.toast.show("Customer Created");
-        router.push("/b2b-customers-manage");
+        router.back();
       }
     } catch (error) {
       console.error("Error during validation:", error);

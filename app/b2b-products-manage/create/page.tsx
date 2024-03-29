@@ -1,6 +1,6 @@
 "use client";
 
-import { gql, useMutation, useQuery } from "@apollo/client";
+import { gql, useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import {
   Page,
   Card,
@@ -16,9 +16,28 @@ import {
 } from "@shopify/polaris";
 import { DeleteIcon } from "@shopify/polaris-icons";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { v4 as uuid } from "uuid";
 import { showAndHideShopifyToast } from "../../../helpers/showAndHideShopifyToast";
+
+const ProductTagMutation = gql`
+  mutation productUpdate($input: ProductInput!) {
+    productUpdate(input: $input) {
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const ProductTagQuery = gql`
+  query productTagRead($id: ID!) {
+    product(id: $id) {
+      tags
+    }
+  }
+`;
 
 export default function CreatePage() {
   const router = useRouter();
@@ -27,6 +46,35 @@ export default function CreatePage() {
     id: string;
     variants: { title?: string; image?: string; id?: string }[];
   }>();
+  const [productMarked, setProductMarked] = useState(false);
+
+  const [markProductAsB2B, { loading, called }] = useMutation(
+    ProductTagMutation,
+    {
+      variables: { input: { tags: ["b2b"], id: shopifyProduct?.id ?? "" } },
+      fetchPolicy: "network-only",
+    },
+  );
+
+  const {
+    data: tagQueryData,
+    // loading: tagQueryLoading,
+    // called: tagQueryCalled,
+  } = useQuery(ProductTagQuery, {
+    variables: {
+      id: shopifyProduct?.id ?? "",
+    },
+    fetchPolicy: "network-only",
+  });
+
+  useEffect(() => {
+    if (tagQueryData) {
+      const tags: String[] = tagQueryData.product.tags;
+      if (tags.some((i) => i === "b2b")) {
+        setProductMarked(true);
+      }
+    }
+  }, [tagQueryData]);
 
   async function handleProductSelection() {
     try {
@@ -66,6 +114,29 @@ export default function CreatePage() {
     }
   }
 
+  async function handleMarkAsB2b() {
+    const { data, errors } = await markProductAsB2B({
+      variables: {
+        input: {
+          id: shopifyProduct?.id ?? "",
+          tags: ["b2b"],
+        },
+      },
+    });
+    console.log(data, "data");
+
+    if (errors || data.productUpdate.userErrors.length > 0) {
+      console.error(errors);
+      console.error(data);
+      showAndHideShopifyToast(
+        "Error while marking product as b2b, please try again later",
+        3000,
+      );
+      return;
+    }
+
+    setProductMarked(true);
+  }
 
   return (
     <Page
@@ -99,13 +170,27 @@ export default function CreatePage() {
           </BlockStack>
         </Box>
       ) : null}
+      <Button
+        loading={called && loading}
+        disabled={productMarked}
+        onClick={handleMarkAsB2b}
+      >
+        Mark as B2B
+      </Button>
     </Page>
   );
 }
 
+// TODO: handleMarkAsB2B
+
 const VariantMetafieldsUpdateMutation = gql`
   mutation VariantMetafieldAdd($variantInput: ProductVariantInput!) {
     productVariantUpdate(input: $variantInput) {
+      productVariant {
+        metafield(namespace: "b2b-app", key: "batches") {
+          id
+        }
+      }
       userErrors {
         field
         message
@@ -119,6 +204,7 @@ const VariantMetafieldsReadQuery = gql`
     productVariant(id: $id) {
       metafield(namespace: "b2b-app", key: "batches") {
         value
+        id
       }
     }
   }
@@ -140,6 +226,9 @@ function VariantCard({
   const [batches, setBatches] = useState<
     { id: string; quantity: string; price: string }[]
   >([]);
+  const [batchesMetafieldId, setBactchesMetafieldId] = useState("");
+  const [pendingDelete, startTransition] = useTransition();
+  const [clickedDelete, setClickedDelete] = useState("");
 
   const [updateMetafield, { called, loading }] = useMutation(
     VariantMetafieldsUpdateMutation,
@@ -148,27 +237,55 @@ function VariantCard({
     },
   );
 
-  const { error, data } = useQuery(VariantMetafieldsReadQuery, {
+  const [readMetafeilds] = useLazyQuery(VariantMetafieldsReadQuery, {
     fetchPolicy: "network-only",
     variables: { id },
   });
 
   useEffect(() => {
-    if (error) {
-      console.error(error, "VariantMetafieldsReadQueryError");
-      showAndHideShopifyToast(
-        "Error while loading batches of the variant. Please try again.",
-        3000
+    async function ops() {
+      const { data, error } = await readMetafeilds();
+      console.log(
+        data.productVariant.metafield,
+        "data.productVariant.metafield",
       );
-      return;
+
+      if (error) {
+        console.error(error, "VariantMetafieldsReadQueryError");
+        showAndHideShopifyToast(
+          "Error while loading batches of the variant. Please try again.",
+          3000,
+        );
+        return;
+      }
+
+      if (!data) {
+        console.error(data, "VariantMetafield not fetched");
+        return;
+      }
+
+      if (!data.productVariant.metafield) {
+        console.log(data, "VariantMetafield not defined");
+        return;
+      }
+
+      try {
+        const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
+        console.log(fetchedBatches, "fetchedBatches");
+        setBatches(
+          fetchedBatches.map((i: any) => ({
+            ...i,
+            id: uuid(),
+          })),
+        );
+        const fetchedBatchesMetafieldId = data.productVariant.metafield.id;
+        setBactchesMetafieldId(fetchedBatchesMetafieldId ?? "");
+      } catch (e) {
+        console.error("Error while parsing the variant metafield");
+      }
     }
-    try {
-      const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
-      setBatches(fetchedBatches);
-    } catch (e) {
-      console.error("Error while parsing the variant metafield");
-    }
-  }, [error, data.productVariant.metafield.value]);
+    ops();
+  }, []);
 
   const pending = called && loading;
 
@@ -190,6 +307,14 @@ function VariantCard({
       setBatchQuantityError("Already Exists");
       return;
     }
+    const newBatches = [
+      ...batches,
+      { id: uuid(), quantity: batchQuantity, price: batchPrice },
+    ];
+    const value = JSON.stringify(
+      newBatches.map((i) => ({ quantity: i.quantity, price: i.price })),
+    );
+    console.log(value, "value");
 
     const { data, errors } = await updateMetafield({
       variables: {
@@ -200,33 +325,60 @@ function VariantCard({
               namespace: "b2b-app",
               type: "json",
               key: "batches",
-              value: JSON.stringify(
-                batches.map((i) => ({ quantity: i.quantity, price: i.price })),
-              ),
+              id: batchesMetafieldId ? batchesMetafieldId : undefined,
+              value: value,
             },
           ],
         },
       },
     });
 
-    if (errors) {
+    if (errors || data.productVariantUpdate.userErrors.length > 0) {
       console.error(errors, "updateMetafieldErrors");
       console.error(data, "updateMetafieldData");
       showAndHideShopifyToast("Error while updating batch.", 3000);
       return;
     }
 
-    console.log(data, "updateMetafieldData");
-
     setBatches([
       ...batches,
       { id: uuid(), quantity: batchQuantity, price: batchPrice },
     ]);
+    setBactchesMetafieldId(
+      data.productVariantUpdate.productVariant.metafield.id,
+    );
   }
 
-  async function handleBatchDelete(id: string) {
-    const newBatches = batches.filter((i) => i.id !== id);
-    setBatches(newBatches);
+  async function handleBatchDelete(batchId: string) {
+    startTransition(async () => {
+      const newBatches = batches.filter((i) => i.id !== batchId);
+      const value = JSON.stringify(newBatches);
+      const { data, errors } = await updateMetafield({
+        variables: {
+          variantInput: {
+            id: id,
+            metafields: [
+              {
+                namespace: "b2b-app",
+                type: "json",
+                key: "batches",
+                id: batchesMetafieldId ? batchesMetafieldId : undefined,
+                value: value,
+              },
+            ],
+          },
+        },
+      });
+
+      if (errors || data.productVariantUpdate.userErrors.length > 0) {
+        console.error(errors, "updateMetafieldErrors");
+        console.error(data, "updateMetafieldData");
+        showAndHideShopifyToast("Error while updating batch.", 3000);
+        return;
+      }
+      setBatches(newBatches);
+    });
+    setClickedDelete(batchId);
   }
 
   return (
@@ -250,6 +402,7 @@ function VariantCard({
                 {batches.map((i) => (
                   <InlineStack align="start" key={i.id} gap={"200"}>
                     <Button
+                      loading={pendingDelete && clickedDelete === i.id}
                       onClick={() => handleBatchDelete(i.id)}
                       icon={DeleteIcon}
                     />
