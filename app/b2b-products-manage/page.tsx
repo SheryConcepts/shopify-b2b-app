@@ -1,11 +1,30 @@
 "use client";
 
-import { Page } from "@shopify/polaris";
+import {
+  BlockStack,
+  Card,
+  Page,
+  SkeletonBodyText,
+  Text,
+} from "@shopify/polaris";
 import { useRouter } from "next/navigation";
-import Home from "../main-page";
+import { gql, useQuery } from "@apollo/client";
+
+const B2BProductsQuery = gql`
+  query {
+    products(first: 100, query: "tag:b2b") {
+      nodes {
+        title
+      }
+    }
+  }
+`;
 
 export default function B2BProductsManage() {
   const router = useRouter();
+  const { data, loading, called } = useQuery(B2BProductsQuery, {
+    fetchPolicy: "network-only",
+  });
   return (
     <Page
       primaryAction={{
@@ -19,6 +38,26 @@ export default function B2BProductsManage() {
         content: "Go to home screen",
       }}
       title="B2B Products"
-    ></Page>
+    >
+      {called && loading ? (
+        <SkeletonBodyText />
+      ) : (
+        <BlockStack gap={"200"}>
+          {data.products.nodes.map((i: any) => (
+            <ProductCard key={i.title} title={i.title} />
+          ))}
+        </BlockStack>
+      )}
+    </Page>
+  );
+}
+
+function ProductCard({ title }: { title: string }) {
+  return (
+    <Card>
+      <Text as="h2" variant="headingMd">
+        {title}
+      </Text>
+    </Card>
   );
 }

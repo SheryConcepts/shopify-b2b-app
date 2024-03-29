@@ -90,7 +90,7 @@ export default function CreatePage() {
               return {
                 id: i.id,
                 title: i.title,
-                image: product.images[0].originalSrc,
+                image: product.images[0]?.originalSrc ??  "",
               };
             }),
           });
@@ -103,7 +103,7 @@ export default function CreatePage() {
             return {
               id: i.id,
               title: i.title,
-              image: i.image?.originalSrc ?? product.images[0].originalSrc,
+              image: i.image?.originalSrc ?? product.images[0]?.originalSrc ?? "" ,
             };
           }),
         });
@@ -170,13 +170,15 @@ export default function CreatePage() {
           </BlockStack>
         </Box>
       ) : null}
-      <Button
-        loading={called && loading}
-        disabled={productMarked}
-        onClick={handleMarkAsB2b}
-      >
-        Mark as B2B
-      </Button>
+      {shopifyProduct && (
+        <Button
+          loading={called && loading}
+          disabled={productMarked}
+          onClick={handleMarkAsB2b}
+        >
+          Mark as B2B
+        </Button>
+      )}
     </Page>
   );
 }
