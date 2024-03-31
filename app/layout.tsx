@@ -1,6 +1,6 @@
+import "./global.css";
 import Providers from "@/providers/providers";
 import { Metadata } from "next";
-import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "Next.js Shopify App",
@@ -18,9 +18,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
-          src="https://cdn.shopify.com/shopifycloud/app-bridge.js"
-        />
+        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
       </head>
       <body>
         <Providers>{children}</Providers>
