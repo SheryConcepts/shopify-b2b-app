@@ -14,7 +14,7 @@ export function SignInForm() {
     <div className="mx-auto max-w-sm space-y-4">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Sign In</h1>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500">
           Please enter your email and password to sign in.
         </p>
       </div>
@@ -22,7 +22,6 @@ export function SignInForm() {
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
-            className="text-slate-100"
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -35,7 +34,6 @@ export function SignInForm() {
           <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="text-slate-100"
             id="password"
             type="password"
           />
