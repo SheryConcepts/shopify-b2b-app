@@ -1,7 +1,8 @@
 import Link from "next/link";
 import SignoutButton from "./signout-button";
+import isSignedIn from "@/lib/session";
 
-export function Header() {
+export async function Header() {
   return (
     <header className="flex items-center p-4 gap-4">
       <div className="flex items-center gap-4">
@@ -14,7 +15,7 @@ export function Header() {
         </Link>
       </div>
       <div className="ml-auto flex items-center gap-4">
-        <SignoutButton />
+        {(await isSignedIn()) ? <SignoutButton /> : null}
       </div>
     </header>
   );

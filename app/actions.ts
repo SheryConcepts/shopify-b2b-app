@@ -1,11 +1,12 @@
 "use server";
 
 import { sign } from "@/lib/session";
-import customShopify from "@/lib/shopify/custom-app-initialize";
+import shopify from "@/lib/shopify/custom-app-initialize";
 import { verifyAuth } from "@/lib/shopify/verify";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { signOut as signOutFunction } from "@/lib/session";
+import customShopifyClient from "@/lib/shopify/custom-app-initialize";
 
 export async function checkSession(shop: string) {
   try {
@@ -51,10 +52,7 @@ const ReadCustomersQuery = `
 `;
 
 export async function signIn(email: string, password: string): Promise<void> {
-  const session = customShopify.session.customAppSession(
-    "shery-store-3.myshopify.com" ?? "",
-  );
-  const client = new customShopify.clients.Graphql({ session });
+  const client = customShopifyClient;
 
   const { data, errors } = await client.request(ReadCustomersQuery);
 
@@ -99,5 +97,5 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 export async function signOut() {
   await signOutFunction();
-  redirect("/shop")
+  redirect("/shop");
 }
