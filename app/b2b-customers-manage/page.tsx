@@ -4,11 +4,8 @@ import { gql, useLazyQuery } from "@apollo/client";
 import {
   BlockStack,
   Box,
-  Card,
-  DescriptionList,
   Page,
   SkeletonBodyText,
-  DataTable,
   IndexTable,
   LegacyCard,
   useIndexResourceState,
@@ -57,9 +54,9 @@ type CustomerInfo = {
   firstName: string;
   lastName: string;
   email: string;
-  password: string; // New field with an empty string
+  password: string;
   phone: string;
-  address: string; // Merged from addresses array
+  address: string; 
   note: string;
 };
 
@@ -69,9 +66,9 @@ function convertUsers(gqlData: GQLResponse[]): CustomerInfo[] {
     firstName: i.firstName,
     lastName: i.lastName,
     email: i.email,
-    password: i.metafield.value, // Initialize password as empty string
+    password: i.metafield.value, 
     phone: i.phone,
-    address: i.addresses.length > 0 ? i.addresses[0].address1 : "", // Extract first address or empty string
+    address: i.addresses.length > 0 ? i.addresses[0].address1 : "",
     note: i.note,
   }));
 }
@@ -191,49 +188,5 @@ function CustomersIndexTable({ customers }: { customers: CustomerInfo[] }) {
         {rowMarkup}
       </IndexTable>
     </LegacyCard>
-  );
-}
-
-function CustomerInfoCard({
-  customerInfo: { firstName, lastName, email, note, phone, address, password },
-}: {
-  customerInfo: CustomerInfo;
-}) {
-  return (
-    <Card padding="300">
-      <DescriptionList
-        gap={"tight"}
-        items={[
-          {
-            term: "First Name",
-            description: firstName,
-          },
-          {
-            term: "Last Name",
-            description: lastName,
-          },
-          {
-            term: "Email",
-            description: email,
-          },
-          {
-            term: "Password",
-            description: password,
-          },
-          {
-            term: "Phone",
-            description: phone,
-          },
-          {
-            term: "Address",
-            description: address,
-          },
-          {
-            term: "Note",
-            description: note,
-          },
-        ]}
-      />
-    </Card>
   );
 }
