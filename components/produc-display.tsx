@@ -102,6 +102,8 @@ export function ProducDisplay({ productData }: { productData: Product }) {
             </Select>
           )}
         </div>
+        {
+        batches ? 
         <div className="mt-4">
           <label
             className="block text-sm font-medium text-gray-700"
@@ -122,11 +124,14 @@ export function ProducDisplay({ productData }: { productData: Product }) {
             </SelectContent>
           </Select>
         </div>
+        : null
+        }
         <div className="flex mt-6">
           {/*@ts-ignore*/}
           <Button
             onClick={handleAddToCard}
             className="flex-1 mr-2"
+            // @ts-ignore
             variant="outline"
           >
             Add to cart

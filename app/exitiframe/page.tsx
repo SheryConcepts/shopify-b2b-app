@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 export default function ExitIframe() {
   const searchParams = useSearchParams();
@@ -13,6 +13,7 @@ export default function ExitIframe() {
     }
   }, [searchParams]);
 
-
-  return <div></div>;
+  return (
+      <div></div>
+  );
 }

@@ -23,6 +23,22 @@ export async function middleware(request: NextRequest) {
     nextUrl: { search, pathname },
   } = request;
 
+  if (!pathname.startsWith("/shop")) {
+    // const urlSearchParams = new URLSearchParams(search);
+    // const params = Object.fromEntries(urlSearchParams.entries());
+    //
+    // const shop = params.shop || "*.myshopify.com";
+    //
+    const res = NextResponse.next();
+    // res.headers.set(
+    // 	"Content-Security-Policy",
+    // 	`frame-ancestors https://${shop} https://admin.shopify.com;`
+    // );
+
+    // You can also set request headers in NextResponse.rewrite
+    return res;
+  }
+
   const url = request.nextUrl.clone();
   const signedIn = await isSignedIn();
   if (!signedIn && pathname.startsWith("/shop") && pathname !== "/shop") {
@@ -34,18 +50,4 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/shop/products";
     return NextResponse.redirect(url);
   }
-
-  // const urlSearchParams = new URLSearchParams(search);
-  // const params = Object.fromEntries(urlSearchParams.entries());
-  //
-  // const shop = params.shop || "*.myshopify.com";
-  //
-  const res = NextResponse.next();
-  // res.headers.set(
-  // 	"Content-Security-Policy",
-  // 	`frame-ancestors https://${shop} https://admin.shopify.com;`
-  // );
-
-  // You can also set request headers in NextResponse.rewrite
-  return res;
 }
