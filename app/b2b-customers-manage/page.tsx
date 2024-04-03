@@ -89,7 +89,7 @@ export default function B2BCustomersManage() {
         return;
       }
       const customerInfo = convertUsers(data.customers.nodes);
-      setCustomersInfo(customerInfo);
+      setCustomersInfo(customerInfo.toReversed());
     }
     ops();
     // eslint-disable-next-line react-hooks/exhaustive-deps

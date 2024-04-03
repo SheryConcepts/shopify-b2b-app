@@ -9,8 +9,6 @@ import {
   BlockStack,
   Thumbnail,
   Layout,
-  TextField,
-  Form,
   Box,
   InlineStack,
 } from "@shopify/polaris";
@@ -170,10 +168,7 @@ export default function CreatePage() {
         </Box>
       ) : null}
       {shopifyProduct && (
-        <Button
-          loading={called && loading}
-          onClick={handleMarkAsB2b}
-        >
+        <Button loading={called && loading} onClick={handleMarkAsB2b}>
           Mark as B2B
         </Button>
       )}
@@ -385,7 +380,7 @@ function VariantCard({
   return (
     <Card padding={"400"}>
       <Layout>
-        <Layout.Section variant="oneHalf">
+        <Layout.Section variant="oneThird">
           <BlockStack gap={"300"} align="start">
             {image && (
               <Thumbnail source={image} alt="Variant Image" size="large" />
