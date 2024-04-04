@@ -5,18 +5,28 @@ import {
   Page,
   Card,
   Button,
-  Text,
+  TextField,
   BlockStack,
   Thumbnail,
   Layout,
+  Form,
   Box,
   InlineStack,
+  IndexTable,
+  LegacyCard,
+  Text,
+  Badge,
+  useBreakpoints,
+  Icon,
+  Tooltip,
 } from "@shopify/polaris";
+import { ListBulletedIcon } from "@shopify/polaris-icons";
 import { DeleteIcon } from "@shopify/polaris-icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { v4 as uuid } from "uuid";
 import { showAndHideShopifyToast } from "../../../helpers/showAndHideShopifyToast";
+import { BatchTable } from "@/components/batch-table";
 
 const ProductTagMutation = gql`
   mutation productUpdate($input: ProductInput!) {
@@ -36,6 +46,12 @@ const ProductTagQuery = gql`
     }
   }
 `;
+
+type ShopifyProductVaraint = {
+  title?: string;
+  image?: string;
+  id?: string;
+};
 
 export default function CreatePage() {
   const router = useRouter();
@@ -79,7 +95,6 @@ export default function CreatePage() {
       const payload = await shopify.resourcePicker({ type: "product" });
       if (payload) {
         const product = payload[0];
-        console.log(JSON.stringify(product, null, 4));
         if (product.totalVariants === 1) {
           setShopifyProduct({
             title: product.title,
@@ -122,7 +137,6 @@ export default function CreatePage() {
         },
       },
     });
-    console.log(data, "data");
 
     if (errors || data.productUpdate.userErrors.length > 0) {
       console.error(errors);
@@ -154,16 +168,7 @@ export default function CreatePage() {
             <Text as="h2" variant="headingXl">
               {shopifyProduct?.title}
             </Text>
-            <BlockStack gap={"200"}>
-              {shopifyProduct.variants.map((i) => (
-                <VariantCard
-                  title={i.title}
-                  image={i.image}
-                  id={i.id}
-                  key={i.id}
-                />
-              ))}
-            </BlockStack>
+            <VariantsTable variants={shopifyProduct.variants} />
           </BlockStack>
         </Box>
       ) : null}
@@ -175,8 +180,6 @@ export default function CreatePage() {
     </Page>
   );
 }
-
-// TODO: handleMarkAsB2B
 
 const VariantMetafieldsUpdateMutation = gql`
   mutation VariantMetafieldAdd($variantInput: ProductVariantInput!) {
@@ -205,244 +208,285 @@ const VariantMetafieldsReadQuery = gql`
   }
 `;
 
-function VariantCard({
-  image,
-  title,
-  id,
-}: {
-  image?: string;
-  title?: string;
-  id?: string;
-}) {
-  const [batchQuantity, setBatchQuantity] = useState("");
-  const [batchQuantityError, setBatchQuantityError] = useState("");
-  const [batchPrice, setBatchPrice] = useState("");
-  const [batchPriceError, setBatchPriceError] = useState("");
-  const [batches, setBatches] = useState<
-    { id: string; quantity: string; price: string }[]
-  >([]);
-  const [batchesMetafieldId, setBactchesMetafieldId] = useState("");
-  const [pendingDelete, startTransition] = useTransition();
-  const [clickedDelete, setClickedDelete] = useState("");
+function VariantsTable({ variants }: { variants: ShopifyProductVaraint[] }) {
+  const resourceName = {
+    singular: "variant",
+    plural: "variants",
+  };
 
-  const [updateMetafield, { called, loading }] = useMutation(
-    VariantMetafieldsUpdateMutation,
-    {
-      fetchPolicy: "network-only",
-    },
-  );
-
-  const [readMetafeilds] = useLazyQuery(VariantMetafieldsReadQuery, {
-    fetchPolicy: "network-only",
-    variables: { id },
-  });
-
-  useEffect(() => {
-    async function ops() {
-      const { data, error } = await readMetafeilds();
-      console.log(
-        data.productVariant.metafield,
-        "data.productVariant.metafield",
-      );
-
-      if (error) {
-        console.error(error, "VariantMetafieldsReadQueryError");
-        showAndHideShopifyToast(
-          "Error while loading batches of the variant. Please try again.",
-          3000,
-        );
-        return;
-      }
-
-      if (!data) {
-        console.error(data, "VariantMetafield not fetched");
-        return;
-      }
-
-      if (!data.productVariant.metafield) {
-        console.log(data, "VariantMetafield not defined");
-        return;
-      }
-
-      try {
-        const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
-        console.log(fetchedBatches, "fetchedBatches");
-        setBatches(
-          fetchedBatches.map((i: any) => ({
-            ...i,
-            id: uuid(),
-          })),
-        );
-        const fetchedBatchesMetafieldId = data.productVariant.metafield.id;
-        setBactchesMetafieldId(fetchedBatchesMetafieldId ?? "");
-      } catch (e) {
-        console.error("Error while parsing the variant metafield");
-      }
-    }
-    ops();
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const pending = called && loading;
-
-  async function handleBatchSubmition() {
-    if (!batchQuantity) {
-      setBatchQuantityError("Can't be empty.");
-      return;
-    }
-    if (!batchPrice) {
-      setBatchPriceError("Can't be empty.");
-      return;
-    }
-    if (
-      batches.some(
-        (i) => i.quantity === batchQuantity && i.price === batchPrice,
-      )
-    ) {
-      setBatchPriceError("Already Exists");
-      setBatchQuantityError("Already Exists");
-      return;
-    }
-    const newBatches = [
-      ...batches,
-      { id: uuid(), quantity: batchQuantity, price: batchPrice },
-    ];
-    const value = JSON.stringify(
-      newBatches.map((i) => ({ quantity: i.quantity, price: i.price })),
-    );
-    console.log(value, "value");
-
-    const { data, errors } = await updateMetafield({
-      variables: {
-        variantInput: {
-          id: id,
-          metafields: [
-            {
-              namespace: "b2b-app",
-              type: "json",
-              key: "batches",
-              id: batchesMetafieldId ? batchesMetafieldId : undefined,
-              value: value,
-            },
-          ],
-        },
-      },
-    });
-
-    if (errors || data.productVariantUpdate.userErrors.length > 0) {
-      console.error(errors, "updateMetafieldErrors");
-      console.error(data, "updateMetafieldData");
-      showAndHideShopifyToast("Error while updating batch.", 3000);
-      return;
-    }
-
-    setBatches([
-      ...batches,
-      { id: uuid(), quantity: batchQuantity, price: batchPrice },
-    ]);
-    setBactchesMetafieldId(
-      data.productVariantUpdate.productVariant.metafield.id,
-    );
-  }
-
-  async function handleBatchDelete(batchId: string) {
-    startTransition(async () => {
-      const newBatches = batches.filter((i) => i.id !== batchId);
-      const value = JSON.stringify(newBatches);
-      const { data, errors } = await updateMetafield({
-        variables: {
-          variantInput: {
-            id: id,
-            metafields: [
-              {
-                namespace: "b2b-app",
-                type: "json",
-                key: "batches",
-                id: batchesMetafieldId ? batchesMetafieldId : undefined,
-                value: value,
-              },
-            ],
-          },
-        },
-      });
-
-      if (errors || data.productVariantUpdate.userErrors.length > 0) {
-        console.error(errors, "updateMetafieldErrors");
-        console.error(data, "updateMetafieldData");
-        showAndHideShopifyToast("Error while updating batch.", 3000);
-        return;
-      }
-      setBatches(newBatches);
-    });
-    setClickedDelete(batchId);
-  }
+  const rowMarkup = variants.map(({ id, image, title }, index) => (
+    <IndexTable.Row id={id!} key={id} position={index}>
+      <IndexTable.Cell>
+        <Thumbnail source={image ?? ""} alt="" />
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <Text variant="bodyMd" fontWeight="bold" as="span">
+          {title}
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>
+        <BatchTable />
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ));
 
   return (
-    <Card padding={"400"}>
-      <Layout>
-        <Layout.Section variant="oneThird">
-          <BlockStack gap={"300"} align="start">
-            {image && (
-              <Thumbnail source={image} alt="Variant Image" size="large" />
-            )}
-            {title && (
-              <Text as="p" variant="headingSm">
-                {title}
-              </Text>
-            )}
-            {batches.length > 0 && (
-              <BlockStack gap={"100"}>
-                <Text as="h2" variant="headingMd">
-                  Batches
-                </Text>
-                {batches.map((i) => (
-                  <InlineStack align="start" key={i.id} gap={"200"}>
-                    <Button
-                      loading={pendingDelete && clickedDelete === i.id}
-                      onClick={() => handleBatchDelete(i.id)}
-                      icon={DeleteIcon}
-                    />
-                    <Text as="p" variant="bodyLg">
-                      {i.quantity} Products for {i.price}$
-                    </Text>
-                  </InlineStack>
-                ))}
-              </BlockStack>
-            )}
-          </BlockStack>
-        </Layout.Section>
-        <Layout.Section variant="oneHalf">
-          <Form onSubmit={handleBatchSubmition}>
-            <BlockStack gap={"200"}>
-              <TextField
-                value={batchQuantity}
-                onChange={(e) => {
-                  setBatchQuantityError("");
-                  setBatchQuantity(e);
-                }}
-                label="Batch Quantity"
-                type="number"
-                error={batchQuantityError}
-                autoComplete=""
-              />
-              <TextField
-                value={batchPrice}
-                onChange={(e) => {
-                  setBatchPriceError("");
-                  setBatchPrice(e);
-                }}
-                label="Batch Price"
-                error={batchPriceError}
-                type="number"
-                autoComplete=""
-              />
-              <Button loading={pending} submit>
-                Create Batch
-              </Button>
-            </BlockStack>
-          </Form>
-        </Layout.Section>
-      </Layout>
-    </Card>
+    <LegacyCard>
+      <IndexTable
+        condensed={useBreakpoints().smDown}
+        resourceName={resourceName}
+        itemCount={variants.length}
+        headings={[
+          { title: "Image" },
+          { title: "Title" },
+          { title: "Batches" },
+        ]}
+        selectable={false}
+      >
+        {rowMarkup}
+      </IndexTable>
+    </LegacyCard>
   );
 }
+
+// function VariantCard({
+//   image,
+//   title,
+//   id,
+// }: {
+//   image?: string;
+//   title?: string;
+//   id?: string;
+// }) {
+//   const [batchQuantity, setBatchQuantity] = useState("");
+//   const [batchQuantityError, setBatchQuantityError] = useState("");
+//   const [batchPrice, setBatchPrice] = useState("");
+//   const [batchPriceError, setBatchPriceError] = useState("");
+//   const [batches, setBatches] = useState<
+//     { id: string; quantity: string; price: string }[]
+//   >([]);
+//   const [batchesMetafieldId, setBactchesMetafieldId] = useState("");
+//   const [pendingDelete, startTransition] = useTransition();
+//   const [clickedDelete, setClickedDelete] = useState("");
+//
+//   const [updateMetafield, { called, loading }] = useMutation(
+//     VariantMetafieldsUpdateMutation,
+//     {
+//       fetchPolicy: "network-only",
+//     },
+//   );
+//
+//   const [readMetafeilds] = useLazyQuery(VariantMetafieldsReadQuery, {
+//     fetchPolicy: "network-only",
+//     variables: { id },
+//   });
+//
+//   useEffect(() => {
+//     async function ops() {
+//       const { data, error } = await readMetafeilds();
+//       console.log(
+//         data.productVariant.metafield,
+//         "data.productVariant.metafield",
+//       );
+//
+//       if (error) {
+//         console.error(error, "VariantMetafieldsReadQueryError");
+//         showAndHideShopifyToast(
+//           "Error while loading batches of the variant. Please try again.",
+//           3000,
+//         );
+//         return;
+//       }
+//
+//       if (!data) {
+//         console.error(data, "VariantMetafield not fetched");
+//         return;
+//       }
+//
+//       if (!data.productVariant.metafield) {
+//         console.log(data, "VariantMetafield not defined");
+//         return;
+//       }
+//
+//       try {
+//         const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
+//         console.log(fetchedBatches, "fetchedBatches");
+//         setBatches(
+//           fetchedBatches.map((i: any) => ({
+//             ...i,
+//             id: uuid(),
+//           })),
+//         );
+//         const fetchedBatchesMetafieldId = data.productVariant.metafield.id;
+//         setBactchesMetafieldId(fetchedBatchesMetafieldId ?? "");
+//       } catch (e) {
+//         console.error("Error while parsing the variant metafield");
+//       }
+//     }
+//     ops();
+//     //eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+//
+//   const pending = called && loading;
+//
+//   async function handleBatchSubmition() {
+//     if (!batchQuantity) {
+//       setBatchQuantityError("Can't be empty.");
+//       return;
+//     }
+//     if (!batchPrice) {
+//       setBatchPriceError("Can't be empty.");
+//       return;
+//     }
+//     if (
+//       batches.some(
+//         (i) => i.quantity === batchQuantity && i.price === batchPrice,
+//       )
+//     ) {
+//       setBatchPriceError("Already Exists");
+//       setBatchQuantityError("Already Exists");
+//       return;
+//     }
+//     const newBatches = [
+//       ...batches,
+//       { id: uuid(), quantity: batchQuantity, price: batchPrice },
+//     ];
+//     const value = JSON.stringify(
+//       newBatches.map((i) => ({ quantity: i.quantity, price: i.price })),
+//     );
+//     console.log(value, "value");
+//
+//     const { data, errors } = await updateMetafield({
+//       variables: {
+//         variantInput: {
+//           id: id,
+//           metafields: [
+//             {
+//               namespace: "b2b-app",
+//               type: "json",
+//               key: "batches",
+//               id: batchesMetafieldId ? batchesMetafieldId : undefined,
+//               value: value,
+//             },
+//           ],
+//         },
+//       },
+//     });
+//
+//     if (errors || data.productVariantUpdate.userErrors.length > 0) {
+//       console.error(errors, "updateMetafieldErrors");
+//       console.error(data, "updateMetafieldData");
+//       showAndHideShopifyToast("Error while updating batch.", 3000);
+//       return;
+//     }
+//
+//     setBatches([
+//       ...batches,
+//       { id: uuid(), quantity: batchQuantity, price: batchPrice },
+//     ]);
+//     setBactchesMetafieldId(
+//       data.productVariantUpdate.productVariant.metafield.id,
+//     );
+//   }
+//
+//   async function handleBatchDelete(batchId: string) {
+//     startTransition(async () => {
+//       const newBatches = batches.filter((i) => i.id !== batchId);
+//       const value = JSON.stringify(newBatches);
+//       const { data, errors } = await updateMetafield({
+//         variables: {
+//           variantInput: {
+//             id: id,
+//             metafields: [
+//               {
+//                 namespace: "b2b-app",
+//                 type: "json",
+//                 key: "batches",
+//                 id: batchesMetafieldId ? batchesMetafieldId : undefined,
+//                 value: value,
+//               },
+//             ],
+//           },
+//         },
+//       });
+//
+//       if (errors || data.productVariantUpdate.userErrors.length > 0) {
+//         console.error(errors, "updateMetafieldErrors");
+//         console.error(data, "updateMetafieldData");
+//         showAndHideShopifyToast("Error while updating batch.", 3000);
+//         return;
+//       }
+//       setBatches(newBatches);
+//     });
+//     setClickedDelete(batchId);
+//   }
+//
+//   return (
+//     <Card padding={"400"}>
+//       <Layout>
+//         <Layout.Section variant="oneThird">
+//           <BlockStack gap={"300"} align="start">
+//             {image && (
+//               <Thumbnail source={image} alt="Variant Image" size="large" />
+//             )}
+//             {title && (
+//               <Text as="p" variant="headingSm">
+//                 {title}
+//               </Text>
+//             )}
+//             {batches.length > 0 && (
+//               <BlockStack gap={"100"}>
+//                 <Text as="h2" variant="headingMd">
+//                   Batches
+//                 </Text>
+//                 {batches.map((i) => (
+//                   <InlineStack align="start" key={i.id} gap={"200"}>
+//                     <Button
+//                       loading={pendingDelete && clickedDelete === i.id}
+//                       onClick={() => handleBatchDelete(i.id)}
+//                       icon={DeleteIcon}
+//                     />
+//                     <Text as="p" variant="bodyLg">
+//                       {i.quantity} Products for {i.price}$
+//                     </Text>
+//                   </InlineStack>
+//                 ))}
+//               </BlockStack>
+//             )}
+//           </BlockStack>
+//         </Layout.Section>
+//         <Layout.Section variant="oneHalf">
+//           <Form onSubmit={handleBatchSubmition}>
+//             <BlockStack gap={"200"}>
+//               <TextField
+//                 value={batchQuantity}
+//                 onChange={(e) => {
+//                   setBatchQuantityError("");
+//                   setBatchQuantity(e);
+//                 }}
+//                 label="Batch Quantity"
+//                 type="number"
+//                 error={batchQuantityError}
+//                 autoComplete=""
+//               />
+//               <TextField
+//                 value={batchPrice}
+//                 onChange={(e) => {
+//                   setBatchPriceError("");
+//                   setBatchPrice(e);
+//                 }}
+//                 label="Batch Price"
+//                 error={batchPriceError}
+//                 type="number"
+//                 autoComplete=""
+//               />
+//               <Button loading={pending} submit>
+//                 Create Batch
+//               </Button>
+//             </BlockStack>
+//           </Form>
+//         </Layout.Section>
+//       </Layout>
+//     </Card>
+//   );
+// }
