@@ -181,32 +181,6 @@ export default function CreatePage() {
   );
 }
 
-const VariantMetafieldsUpdateMutation = gql`
-  mutation VariantMetafieldAdd($variantInput: ProductVariantInput!) {
-    productVariantUpdate(input: $variantInput) {
-      productVariant {
-        metafield(namespace: "b2b-app", key: "batches") {
-          id
-        }
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
-
-const VariantMetafieldsReadQuery = gql`
-  query VariantMetafieldRead($id: ID!) {
-    productVariant(id: $id) {
-      metafield(namespace: "b2b-app", key: "batches") {
-        value
-        id
-      }
-    }
-  }
-`;
 
 function VariantsTable({ variants }: { variants: ShopifyProductVaraint[] }) {
   const resourceName = {
@@ -225,7 +199,7 @@ function VariantsTable({ variants }: { variants: ShopifyProductVaraint[] }) {
         </Text>
       </IndexTable.Cell>
       <IndexTable.Cell>
-        <BatchTable />
+        <BatchTable variantId={id!} />
       </IndexTable.Cell>
     </IndexTable.Row>
   ));
