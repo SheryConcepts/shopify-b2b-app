@@ -8,12 +8,9 @@ import {
 } from "@/components/ui/table";
 import { PlusIcon, EditIcon, DeleteIcon } from "@shopify/polaris-icons";
 import {
-  Icon,
   Text,
   Tooltip,
   Button,
-  Form,
-  BlockStack,
   TextField,
   SkeletonBodyText,
 } from "@shopify/polaris";
@@ -288,7 +285,7 @@ function EditBatch({
     <>
       <Button
         onClick={() => shopify.modal.show(modalId)}
-        size="large"
+        size="medium"
         icon={EditIcon}
       />
       <Modal id={modalId}>

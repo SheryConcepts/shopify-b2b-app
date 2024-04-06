@@ -61,6 +61,7 @@ export default function CreatePage() {
     variants: { title?: string; image?: string; id?: string }[];
   }>();
   const [productMarked, setProductMarked] = useState(false);
+  const [productTags, setProductTags] = useState<string[]>([]);
 
   const [markProductAsB2B, { loading, called }] = useMutation(
     ProductTagMutation,
@@ -70,31 +71,19 @@ export default function CreatePage() {
     },
   );
 
-  const {
-    data: tagQueryData,
-    // loading: tagQueryLoading,
-    // called: tagQueryCalled,
-  } = useQuery(ProductTagQuery, {
-    variables: {
-      id: shopifyProduct?.id ?? "",
-    },
-    fetchPolicy: "network-only",
-  });
-
   useEffect(() => {
-    if (tagQueryData) {
-      const tags: String[] = tagQueryData.product.tags;
-      if (tags.some((i) => i === "b2b")) {
-        setProductMarked(true);
-      }
+    if (productTags.some((i) => i === "b2b")) {
+      setProductMarked(true);
     }
-  }, [tagQueryData]);
+  }, [productTags]);
 
   async function handleProductSelection() {
     try {
       const payload = await shopify.resourcePicker({ type: "product" });
       if (payload) {
         const product = payload[0];
+        console.log(product);
+        setProductTags(product.tags);
         if (product.totalVariants === 1) {
           setShopifyProduct({
             title: product.title,
@@ -133,7 +122,7 @@ export default function CreatePage() {
       variables: {
         input: {
           id: shopifyProduct?.id ?? "",
-          tags: ["b2b"],
+          tags: [...productTags, "b2b"],
         },
       },
     });
@@ -142,11 +131,35 @@ export default function CreatePage() {
       console.error(errors);
       console.error(data);
       showAndHideShopifyToast(
-        "Error while marking product as b2b, please try again later",
+        "Error while marking product as b2b, please try again",
         3000,
       );
       return;
     }
+
+    setProductMarked(true);
+  }
+
+  async function handleUnmarkAsB2B() {
+    const { data, errors } = await markProductAsB2B({
+      variables: {
+        input: {
+          id: shopifyProduct?.id ?? "",
+          tags: productTags.filter((i) => i !== "b2b"),
+        },
+      },
+    });
+
+    if (errors || data.productUpdate.userErrors.length > 0) {
+      console.error(errors);
+      console.error(data);
+      showAndHideShopifyToast(
+        "Error while unmarking product as b2b, please try again",
+        3000,
+      );
+      return;
+    }
+    setProductMarked(false);
   }
 
   return (
@@ -172,15 +185,19 @@ export default function CreatePage() {
           </BlockStack>
         </Box>
       ) : null}
-      {shopifyProduct && (
-        <Button loading={called && loading} onClick={handleMarkAsB2b}>
-          Mark as B2B
-        </Button>
-      )}
+      {shopifyProduct &&
+        (productMarked ? (
+          <Button loading={called && loading} onClick={handleUnmarkAsB2B}>
+            Unmark as B2B
+          </Button>
+        ) : (
+          <Button loading={called && loading} onClick={handleMarkAsB2b}>
+            Mark as B2B
+          </Button>
+        ))}
     </Page>
   );
 }
-
 
 function VariantsTable({ variants }: { variants: ShopifyProductVaraint[] }) {
   const resourceName = {
@@ -222,245 +239,3 @@ function VariantsTable({ variants }: { variants: ShopifyProductVaraint[] }) {
     </LegacyCard>
   );
 }
-
-// function VariantCard({
-//   image,
-//   title,
-//   id,
-// }: {
-//   image?: string;
-//   title?: string;
-//   id?: string;
-// }) {
-//   const [batchQuantity, setBatchQuantity] = useState("");
-//   const [batchQuantityError, setBatchQuantityError] = useState("");
-//   const [batchPrice, setBatchPrice] = useState("");
-//   const [batchPriceError, setBatchPriceError] = useState("");
-//   const [batches, setBatches] = useState<
-//     { id: string; quantity: string; price: string }[]
-//   >([]);
-//   const [batchesMetafieldId, setBactchesMetafieldId] = useState("");
-//   const [pendingDelete, startTransition] = useTransition();
-//   const [clickedDelete, setClickedDelete] = useState("");
-//
-//   const [updateMetafield, { called, loading }] = useMutation(
-//     VariantMetafieldsUpdateMutation,
-//     {
-//       fetchPolicy: "network-only",
-//     },
-//   );
-//
-//   const [readMetafeilds] = useLazyQuery(VariantMetafieldsReadQuery, {
-//     fetchPolicy: "network-only",
-//     variables: { id },
-//   });
-//
-//   useEffect(() => {
-//     async function ops() {
-//       const { data, error } = await readMetafeilds();
-//       console.log(
-//         data.productVariant.metafield,
-//         "data.productVariant.metafield",
-//       );
-//
-//       if (error) {
-//         console.error(error, "VariantMetafieldsReadQueryError");
-//         showAndHideShopifyToast(
-//           "Error while loading batches of the variant. Please try again.",
-//           3000,
-//         );
-//         return;
-//       }
-//
-//       if (!data) {
-//         console.error(data, "VariantMetafield not fetched");
-//         return;
-//       }
-//
-//       if (!data.productVariant.metafield) {
-//         console.log(data, "VariantMetafield not defined");
-//         return;
-//       }
-//
-//       try {
-//         const fetchedBatches = JSON.parse(data.productVariant.metafield.value);
-//         console.log(fetchedBatches, "fetchedBatches");
-//         setBatches(
-//           fetchedBatches.map((i: any) => ({
-//             ...i,
-//             id: uuid(),
-//           })),
-//         );
-//         const fetchedBatchesMetafieldId = data.productVariant.metafield.id;
-//         setBactchesMetafieldId(fetchedBatchesMetafieldId ?? "");
-//       } catch (e) {
-//         console.error("Error while parsing the variant metafield");
-//       }
-//     }
-//     ops();
-//     //eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-//
-//   const pending = called && loading;
-//
-//   async function handleBatchSubmition() {
-//     if (!batchQuantity) {
-//       setBatchQuantityError("Can't be empty.");
-//       return;
-//     }
-//     if (!batchPrice) {
-//       setBatchPriceError("Can't be empty.");
-//       return;
-//     }
-//     if (
-//       batches.some(
-//         (i) => i.quantity === batchQuantity && i.price === batchPrice,
-//       )
-//     ) {
-//       setBatchPriceError("Already Exists");
-//       setBatchQuantityError("Already Exists");
-//       return;
-//     }
-//     const newBatches = [
-//       ...batches,
-//       { id: uuid(), quantity: batchQuantity, price: batchPrice },
-//     ];
-//     const value = JSON.stringify(
-//       newBatches.map((i) => ({ quantity: i.quantity, price: i.price })),
-//     );
-//     console.log(value, "value");
-//
-//     const { data, errors } = await updateMetafield({
-//       variables: {
-//         variantInput: {
-//           id: id,
-//           metafields: [
-//             {
-//               namespace: "b2b-app",
-//               type: "json",
-//               key: "batches",
-//               id: batchesMetafieldId ? batchesMetafieldId : undefined,
-//               value: value,
-//             },
-//           ],
-//         },
-//       },
-//     });
-//
-//     if (errors || data.productVariantUpdate.userErrors.length > 0) {
-//       console.error(errors, "updateMetafieldErrors");
-//       console.error(data, "updateMetafieldData");
-//       showAndHideShopifyToast("Error while updating batch.", 3000);
-//       return;
-//     }
-//
-//     setBatches([
-//       ...batches,
-//       { id: uuid(), quantity: batchQuantity, price: batchPrice },
-//     ]);
-//     setBactchesMetafieldId(
-//       data.productVariantUpdate.productVariant.metafield.id,
-//     );
-//   }
-//
-//   async function handleBatchDelete(batchId: string) {
-//     startTransition(async () => {
-//       const newBatches = batches.filter((i) => i.id !== batchId);
-//       const value = JSON.stringify(newBatches);
-//       const { data, errors } = await updateMetafield({
-//         variables: {
-//           variantInput: {
-//             id: id,
-//             metafields: [
-//               {
-//                 namespace: "b2b-app",
-//                 type: "json",
-//                 key: "batches",
-//                 id: batchesMetafieldId ? batchesMetafieldId : undefined,
-//                 value: value,
-//               },
-//             ],
-//           },
-//         },
-//       });
-//
-//       if (errors || data.productVariantUpdate.userErrors.length > 0) {
-//         console.error(errors, "updateMetafieldErrors");
-//         console.error(data, "updateMetafieldData");
-//         showAndHideShopifyToast("Error while updating batch.", 3000);
-//         return;
-//       }
-//       setBatches(newBatches);
-//     });
-//     setClickedDelete(batchId);
-//   }
-//
-//   return (
-//     <Card padding={"400"}>
-//       <Layout>
-//         <Layout.Section variant="oneThird">
-//           <BlockStack gap={"300"} align="start">
-//             {image && (
-//               <Thumbnail source={image} alt="Variant Image" size="large" />
-//             )}
-//             {title && (
-//               <Text as="p" variant="headingSm">
-//                 {title}
-//               </Text>
-//             )}
-//             {batches.length > 0 && (
-//               <BlockStack gap={"100"}>
-//                 <Text as="h2" variant="headingMd">
-//                   Batches
-//                 </Text>
-//                 {batches.map((i) => (
-//                   <InlineStack align="start" key={i.id} gap={"200"}>
-//                     <Button
-//                       loading={pendingDelete && clickedDelete === i.id}
-//                       onClick={() => handleBatchDelete(i.id)}
-//                       icon={DeleteIcon}
-//                     />
-//                     <Text as="p" variant="bodyLg">
-//                       {i.quantity} Products for {i.price}$
-//                     </Text>
-//                   </InlineStack>
-//                 ))}
-//               </BlockStack>
-//             )}
-//           </BlockStack>
-//         </Layout.Section>
-//         <Layout.Section variant="oneHalf">
-//           <Form onSubmit={handleBatchSubmition}>
-//             <BlockStack gap={"200"}>
-//               <TextField
-//                 value={batchQuantity}
-//                 onChange={(e) => {
-//                   setBatchQuantityError("");
-//                   setBatchQuantity(e);
-//                 }}
-//                 label="Batch Quantity"
-//                 type="number"
-//                 error={batchQuantityError}
-//                 autoComplete=""
-//               />
-//               <TextField
-//                 value={batchPrice}
-//                 onChange={(e) => {
-//                   setBatchPriceError("");
-//                   setBatchPrice(e);
-//                 }}
-//                 label="Batch Price"
-//                 error={batchPriceError}
-//                 type="number"
-//                 autoComplete=""
-//               />
-//               <Button loading={pending} submit>
-//                 Create Batch
-//               </Button>
-//             </BlockStack>
-//           </Form>
-//         </Layout.Section>
-//       </Layout>
-//     </Card>
-//   );
-// }
