@@ -1,30 +1,19 @@
 "use client";
 
-import { gql, useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { gql, useMutation } from "@apollo/client";
 import {
   Page,
-  Card,
   Button,
-  TextField,
   BlockStack,
   Thumbnail,
-  Layout,
-  Form,
   Box,
-  InlineStack,
   IndexTable,
   LegacyCard,
   Text,
-  Badge,
   useBreakpoints,
-  Icon,
-  Tooltip,
 } from "@shopify/polaris";
-import { ListBulletedIcon } from "@shopify/polaris-icons";
-import { DeleteIcon } from "@shopify/polaris-icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { v4 as uuid } from "uuid";
 import { showAndHideShopifyToast } from "../../../helpers/showAndHideShopifyToast";
 import { BatchTable } from "@/components/batch-table";
 
@@ -35,14 +24,6 @@ const ProductTagMutation = gql`
         field
         message
       }
-    }
-  }
-`;
-
-const ProductTagQuery = gql`
-  query productTagRead($id: ID!) {
-    product(id: $id) {
-      tags
     }
   }
 `;
