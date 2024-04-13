@@ -30,6 +30,7 @@
     "clsx": "^2.1.0",
     "cookie": "^0.5.0",
     "jose": "^5.2.3",
+    "jotai": "^2.8.0",
     "lucide-react": "^0.363.0",
     "mongodb": "^5.9.2",
     "mongoose": "^7.6.9",

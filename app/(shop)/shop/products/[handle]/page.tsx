@@ -1,12 +1,14 @@
-import { ProducDisplay } from "@/components/produc-display";
+import { ProductDisplay } from "@/components/produc-display";
 import customShopifyClient from "@/lib/shopify/custom-app-initialize";
-
+import { type Product } from "@/lib/types";
 
 const ReadB2BProduct = `
   query($handle: String!) {
     productByHandle(handle: $handle){
+      id
       variants(first: 100) {
         nodes {
+          id
           title
           image {
             altText
@@ -20,7 +22,7 @@ const ReadB2BProduct = `
       }
       hasOnlyDefaultVariant
       title
-      images(first: 1){
+      images(first: 40){
         nodes {
           altText
           url
@@ -30,6 +32,27 @@ const ReadB2BProduct = `
     }
   }
 `;
+
+function reshapeProduct(product: Product): Product {
+  const variantsWithEmptyMetafeildsRemoved = product.variants.nodes.filter(
+    (i) => {
+      const value = i.metafield.value;
+      if (value === null) {
+        return false;
+      }
+      if (JSON.parse(value).length < 1) {
+        return false;
+      }
+      return true;
+    },
+  );
+  return {
+    ...product,
+    variants: {
+      nodes: variantsWithEmptyMetafeildsRemoved,
+    },
+  };
+}
 
 export default async function ProductCardHandle({
   params: { handle },
@@ -44,5 +67,11 @@ export default async function ProductCardHandle({
     throw new Error("Error while fetching the B2B product.");
   }
 
-  return <ProducDisplay productData={data.productByHandle} />;
+  const product = data.productByHandle as Product;
+  if (!product.hasOnlyDefaultVariant) {
+    const productWithValidVariant = reshapeProduct(product);
+    return <ProductDisplay productData={productWithValidVariant} />;
+  } else {
+    return <ProductDisplay productData={product} />;
+  }
 }

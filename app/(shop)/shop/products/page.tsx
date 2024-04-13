@@ -25,7 +25,7 @@ export default async function Products() {
     throw new Error("Error while fetching products");
   }
   return (
-    <div className="bg-slate-200 flex-wrap gap-5 flex flex-row justify-evenly items-start p-5 h-full">
+    <div className="bg-white flex flex-wrap justify-center gap-5 gap-y-10 p-5">
       {data.products.nodes.map((i: any) => (
         <ProductCard
           handle={i.handle}

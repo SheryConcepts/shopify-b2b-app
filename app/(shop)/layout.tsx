@@ -1,4 +1,5 @@
 import { Header } from "@/components/header";
+import JotaiProvider from "@/providers/JotaiProvider";
 import { Cardo, PT_Sans } from "next/font/google";
 
 const cardo = Cardo({
@@ -15,9 +16,11 @@ const ptSans = PT_Sans({
 
 export default function ShopLayout({ children }: { children: JSX.Element }) {
   return (
-    <div className={`w-full h-full ${cardo.variable} ${ptSans.variable}`}>
-      <Header />
-      {children}
-    </div>
+    <JotaiProvider>
+      <div className={`bg-white min-h-full ${cardo.variable} ${ptSans.variable}`}>
+        <Header />
+        <div>{children}</div>
+      </div>
+    </JotaiProvider>
   );
 }

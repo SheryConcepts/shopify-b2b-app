@@ -1,6 +1,6 @@
 "use client";
 
-import { gql, useMutation } from "@apollo/client";
+import { gql, useLazyQuery, useMutation } from "@apollo/client";
 import {
   Page,
   Button,
@@ -28,6 +28,17 @@ const ProductTagMutation = gql`
   }
 `;
 
+const VariantMetafieldsReadQuery = gql`
+  query VariantMetafieldRead($id: ID!) {
+    productVariant(id: $id) {
+      metafield(namespace: "b2b-app", key: "batches") {
+        value
+        id
+      }
+    }
+  }
+`;
+
 type ShopifyProductVaraint = {
   title?: string;
   image?: string;
@@ -43,6 +54,7 @@ export default function CreatePage() {
   }>();
   const [productMarked, setProductMarked] = useState(false);
   const [productTags, setProductTags] = useState<string[]>([]);
+  // const [pendingChecks, startCheckTransition] = useTransition();
 
   const [markProductAsB2B, { loading, called }] = useMutation(
     ProductTagMutation,
@@ -51,6 +63,10 @@ export default function CreatePage() {
       fetchPolicy: "network-only",
     },
   );
+
+  // const [fetchVariantMetafields] = useLazyQuery(VariantMetafieldsReadQuery, {
+  //   fetchPolicy: "network-only",
+  // });
 
   useEffect(() => {
     if (productTags.some((i) => i === "b2b")) {
@@ -99,6 +115,15 @@ export default function CreatePage() {
   }
 
   async function handleMarkAsB2b() {
+    // TODO: only mark if all the selected variants have the batches defined on them.
+    // 1. fetch all the variants
+    // 2. for each variant, check if it batches metafield defined
+    // 3. defined means: batches is not equal to nul or []
+    
+    // shopifyProduct?.variants.forEach(i => {
+    //    
+    // })
+
     const { data, errors } = await markProductAsB2B({
       variables: {
         input: {
