@@ -1,17 +1,16 @@
 "use client";
 
 import { signOut } from "@/app/actions";
-import { Button } from "./ui/button";
+import { linesItems } from "@/lib/atoms";
+import { useSetAtom } from "jotai";
 
 export default function SignoutButton() {
-  return (
-    <Button
-      className="border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900"
-      size="sm"
-      variant="primary"
-      onClick={() => signOut()}
-    >
-      Sign Out
-    </Button>
-  );
+  const setLineItems = useSetAtom(linesItems);
+
+  async function handleSignout() {
+    await signOut();
+    setLineItems([]);
+  }
+
+  return <div onClick={handleSignout}>Sign Out</div>;
 }

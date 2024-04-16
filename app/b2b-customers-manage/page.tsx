@@ -56,7 +56,7 @@ type CustomerInfo = {
   email: string;
   password: string;
   phone: string;
-  address: string; 
+  address: string;
   note: string;
 };
 
@@ -66,7 +66,7 @@ function convertUsers(gqlData: GQLResponse[]): CustomerInfo[] {
     firstName: i.firstName,
     lastName: i.lastName,
     email: i.email,
-    password: i.metafield.value, 
+    password: i.metafield.value,
     phone: i.phone,
     address: i.addresses.length > 0 ? i.addresses[0].address1 : "",
     note: i.note,
@@ -151,7 +151,7 @@ function CustomersIndexTable({ customers }: { customers: CustomerInfo[] }) {
           </Text>
         </IndexTable.Cell>
         <IndexTable.Cell>{email}</IndexTable.Cell>
-        <IndexTable.Cell>{password}</IndexTable.Cell>
+        {/*<IndexTable.Cell>{password}</IndexTable.Cell>*/}{" "}
         <IndexTable.Cell>
           <Text as="span" alignment="end" numeric>
             {phone}
@@ -179,7 +179,7 @@ function CustomersIndexTable({ customers }: { customers: CustomerInfo[] }) {
         headings={[
           { title: "Name" },
           { title: "Email" },
-          { title: "Password" },
+          // { title: "Password" },
           { title: "Phone", alignment: "end" },
           { title: "Address" },
           { title: "Note" },

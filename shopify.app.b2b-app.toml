@@ -3,7 +3,7 @@
 client_id = "7e78054b0d3a86d0e3ca864ae83ff8d2"
 name = "b2b-app"
 handle = "b2b-app-15"
-application_url = "https://clock-theories-knit-methodology.trycloudflare.com"
+application_url = "https://newport-damaged-knock-ecological.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_assigned_fulfillment_orders,read_cart_transforms,read_customer_ev
 
 [auth]
 redirect_urls = [
-  "https://clock-theories-knit-methodology.trycloudflare.com/auth/callback",
-  "https://clock-theories-knit-methodology.trycloudflare.com/auth/shopify/callback",
-  "https://clock-theories-knit-methodology.trycloudflare.com/api/auth/callback"
+  "https://newport-damaged-knock-ecological.trycloudflare.com/auth/callback",
+  "https://newport-damaged-knock-ecological.trycloudflare.com/auth/shopify/callback",
+  "https://newport-damaged-knock-ecological.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
