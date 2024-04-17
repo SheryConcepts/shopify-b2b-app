@@ -1,13 +1,23 @@
 "use client";
 
+import { startCheckout } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { linesItems } from "@/lib/atoms";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { TrashIcon } from "lucide-react";
 import Image from "next/image";
+import { useTransition } from "react";
 
 export default function Cart() {
   const items = useAtomValue(linesItems);
+  const [pending, startTransition] = useTransition();
+
+  function handleCheckout() {
+    startTransition(async () => {
+       await startCheckout(items)
+    });
+  }
+
   if (items.length < 1) {
     return (
       <h1 className="font-serif text-3xl font-bold text-center">
@@ -35,7 +45,12 @@ export default function Cart() {
           />
         ))}
       </div>
-      <Button className="mx-auto font-serif text-lg w-32" size={"lg"}>
+      <Button
+        onClick={handleCheckout}
+        className="bg-green-500 mx-auto font-serif text-lg w-32"
+        size={"lg"}
+        disabled={pending}
+      >
         Checkout
       </Button>
     </div>

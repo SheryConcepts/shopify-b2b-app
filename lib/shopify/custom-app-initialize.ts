@@ -8,6 +8,7 @@ const shopify = shopifyApi({
   adminApiAccessToken: process.env.CUSTOM_APP_ACCESS_TOKEN, // Note: this is the API access token, NOT the API Secret Key
   isEmbeddedApp: false,
   hostName: process.env.HOST_NAME ?? "",
+  privateAppStorefrontAccessToken: "6376974078515e880689d64ff33bd35a"
 });
 
 if (!process.env.HOST_NAME) {
@@ -19,3 +20,7 @@ const session = shopify.session.customAppSession(
 const customShopifyClient = new shopify.clients.Graphql({ session });
 
 export default customShopifyClient;
+
+export const customShopifyStorefrontClient = new shopify.clients.Storefront({
+  session,
+});

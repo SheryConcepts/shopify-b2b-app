@@ -17,7 +17,7 @@ export default function AccountDropDownButton() {
     >
       <UserIcon />
       {linesItems.length > 0 ? (
-        <p className="absolute -right-2 -top-3 w-7 text-center p-1 font-bold bg-green-500 text-white rounded-full">
+        <p className="absolute -right-0 -top-1  text-center px-[6px]  font-bold bg-green-500 text-white rounded-full">
           {linesItems.length}
         </p >
       ) : null}

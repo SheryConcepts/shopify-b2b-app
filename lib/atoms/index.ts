@@ -1,6 +1,6 @@
 import { atomWithStorage } from "jotai/utils";
 
-type LineItem = {
+export type LineItem = {
   id: string;
   title: string;
   image: string;
